@@ -28,22 +28,9 @@
     .btn-snap:active { background: #15803d; transform: scale(0.99); }
     .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
 
-    /* KANVAS TANDA TANGAN (COMPACT & ANTI MACET SCROLL) */
-    .sig-box-wrapper { margin-bottom: 14px; }
-    .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    /* KANVAS TANDA TANGAN */
+    .sig-box-wrapper { margin-bottom: 16px; }
     
-    .btn-reset {
-      font-size: 11px;
-      color: #ef4444;
-      font-weight: 700;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .btn-reset:active { background: #fee2e2; }
-
     .canvas-wrap {
       position: relative;
       width: 100%;
@@ -61,7 +48,33 @@
       cursor: crosshair;
     }
     .canvas-line { position: absolute; bottom: 25px; left: 14px; right: 14px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
-    .scroll-hint { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; }
+
+    /* KONTROL BAWAH KANVAS (RESET DI KIRI, JALUR SCROLL DI KANAN) */
+    .sig-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .btn-reset-safe {
+      font-size: 11px;
+      font-weight: 700;
+      color: #dc2626;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .btn-reset-safe:active { background: #fee2e2; }
+
+    .scroll-hint-right {
+      font-size: 10px;
+      color: #94a3b8;
+      user-select: none;
+    }
 
     .item-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
     .item-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 6px; margin-top: 6px; }
@@ -127,33 +140,33 @@
     <textarea id="catatan" rows="2" placeholder="Kondisi dokumen/barang saat diterima..."></textarea>
   </div>
 
-  <!-- TANDA TANGAN -->
+  <!-- TANDA TANGAN (BEBAS INTERUPSI SCROLL) -->
   <div class="card">
     <div class="sig-box-wrapper">
-      <div class="sig-header">
-        <label style="margin-bottom:0;">✍️ TTD Yang Menyerahkan *</label>
-        <button type="button" class="btn-reset" onclick="konfirmasiReset(pad1)">Hapus / Reset</button>
-      </div>
+      <label>✍️ TTD Yang Menyerahkan *</label>
       <div class="canvas-wrap">
         <canvas id="ttd1"></canvas>
         <div class="canvas-line"></div>
       </div>
+      <div class="sig-footer">
+        <button type="button" class="btn-reset-safe" onclick="konfirmasiReset(pad1)">🗑️ Reset TTD</button>
+        <span class="scroll-hint-right">Jalur Scroll ↕</span>
+      </div>
     </div>
 
-    <div style="height: 12px;"></div>
+    <div style="height: 10px;"></div>
 
     <div class="sig-box-wrapper" style="margin-bottom:0;">
-      <div class="sig-header">
-        <label style="margin-bottom:0;">✍️ TTD Yang Menerima *</label>
-        <button type="button" class="btn-reset" onclick="konfirmasiReset(pad2)">Hapus / Reset</button>
-      </div>
+      <label>✍️ TTD Yang Menerima *</label>
       <div class="canvas-wrap">
         <canvas id="ttd2"></canvas>
         <div class="canvas-line"></div>
       </div>
+      <div class="sig-footer">
+        <button type="button" class="btn-reset-safe" onclick="konfirmasiReset(pad2)">🗑️ Reset TTD</button>
+        <span class="scroll-hint-right">Jalur Scroll ↕</span>
+      </div>
     </div>
-    
-    <p class="scroll-hint">💡 Tips: Geser layar ke atas/bawah menggunakan area tepi luar kotak</p>
   </div>
 
   <button type="button" class="btn-submit" onclick="simpanTransaksi()">Simpan Tanda Terima</button>
@@ -183,9 +196,7 @@
   </div>
 
   <script>
-    // =========================================================================
-    // URL WEB APP APPS SCRIPT SUDAH TERPASANG:
-    // =========================================================================
+    // URL Web App Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA8Cq9f9xweYr6zO_tcv2oMVBny5frgYSyUF35nDgZzGp4cS5bGEr1HbqPMlYW7FrS/exec";
 
     let docId = "DOC 0001";
@@ -355,6 +366,7 @@
     const pad1 = setupSignature("ttd1");
     const pad2 = setupSignature("ttd2");
 
+    // FUNGSI PENGAMAN TOMBOL RESET
     function konfirmasiReset(pad) {
       if (pad.isEmpty()) return;
       if (confirm("Hapus coretan tanda tangan ini?")) {
