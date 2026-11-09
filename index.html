@@ -32,7 +32,6 @@
     .sig-box-wrapper { margin-bottom: 14px; }
     .sig-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     
-    /* Tombol Reset Aman Anti Senggol */
     .btn-reset {
       font-size: 11px;
       color: #ef4444;
@@ -45,7 +44,6 @@
     }
     .btn-reset:active { background: #fee2e2; }
 
-    /* Tinggi dipangkas ke 140px agar menyisakan ruang scroll di HP */
     .canvas-wrap {
       position: relative;
       width: 100%;
@@ -63,8 +61,6 @@
       cursor: crosshair;
     }
     .canvas-line { position: absolute; bottom: 25px; left: 14px; right: 14px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
-
-    /* Panduan Jalur Geser Layar */
     .scroll-hint { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; }
 
     .item-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
@@ -131,7 +127,7 @@
     <textarea id="catatan" rows="2" placeholder="Kondisi dokumen/barang saat diterima..."></textarea>
   </div>
 
-  <!-- TANDA TANGAN (DENGAN AREA GESER AMAN) -->
+  <!-- TANDA TANGAN -->
   <div class="card">
     <div class="sig-box-wrapper">
       <div class="sig-header">
@@ -144,7 +140,6 @@
       </div>
     </div>
 
-    <!-- Area sela scroll -->
     <div style="height: 12px;"></div>
 
     <div class="sig-box-wrapper" style="margin-bottom:0;">
@@ -178,7 +173,6 @@
       <h3 style="font-size:17px; font-weight:bold; margin-bottom:4px;">Tanda Terima Tersimpan!</h3>
       <p id="successInfo" style="font-size:11px; color:#64748b; font-family:monospace; margin-bottom:14px;"></p>
 
-      <!-- TOMBOL KIRIM FILE PDF KE WA LANGSUNG -->
       <button type="button" class="btn-wa-pdf" onclick="kirimFilePdfKeWA()">
         💬 Kirim File PDF ke WhatsApp
       </button>
@@ -190,7 +184,7 @@
 
   <script>
     // =========================================================================
-    // TEMPELKAN URL WEB APP ANDA YANG BERAKHIRAN /exec DI SINI:
+    // URL WEB APP APPS SCRIPT SUDAH TERPASANG:
     // =========================================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA8Cq9f9xweYr6zO_tcv2oMVBny5frgYSyUF35nDgZzGp4cS5bGEr1HbqPMlYW7FrS/exec";
 
@@ -201,7 +195,6 @@
 
     // 1. AMBIL NOMOR DOKUMEN OTOMATIS
     async function loadDocId() {
-      if (SCRIPT_URL.includes("PASTE_URL")) return;
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
@@ -362,7 +355,6 @@
     const pad1 = setupSignature("ttd1");
     const pad2 = setupSignature("ttd2");
 
-    // FUNGSI PENGAMAN TOMBOL RESET
     function konfirmasiReset(pad) {
       if (pad.isEmpty()) return;
       if (confirm("Hapus coretan tanda tangan ini?")) {
@@ -444,10 +436,10 @@
       }
     }
 
-    // 6. FUNGSI KIRIM FILE PDF ASLI KE WHATSAPP (MENGGUNAKAN NATIVE SHARE)
+    // 6. KIRIM FILE PDF KE WA DENGAN TEKS RINGKAS: "Tanda Terima"
     async function kirimFilePdfKeWA() {
       if (!lastPdfBlob) {
-        if (lastPdfUrl) window.open(lastPdfUrl, "_blank");
+        if (lastPdfUrl) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima: ' + lastPdfUrl)}`, '_blank');
         return;
       }
 
@@ -457,16 +449,16 @@
         try {
           await navigator.share({
             files: [pdfFile],
-            title: `Tanda Terima ${docId}`,
-            text: `Berikut berkas PDF Tanda Terima ${docId}`
+            title: "Tanda Terima",
+            text: "Tanda Terima"
           });
         } catch (err) {
           if (err.name !== "AbortError") {
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima ' + docId + ': ' + lastPdfUrl)}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima: ' + lastPdfUrl)}`, '_blank');
           }
         }
       } else {
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima ' + docId + ': ' + lastPdfUrl)}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima: ' + lastPdfUrl)}`, '_blank');
       }
     }
   </script>
