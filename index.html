@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tanda Terima</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: #0f172a; padding: 12px; padding-bottom: 90px; }
+    
+    header { background: #1e293b; color: #fff; padding: 14px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header h1 { font-size: 16px; font-weight: 700; }
+    .badge { font-family: monospace; font-size: 12px; background: #0f172a; border: 1px solid #334155; padding: 4px 8px; border-radius: 6px; font-weight: 700; color: #38bdf8; }
+
+    .card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .form-group { margin-bottom: 10px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
+    input[type="text"], textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; }
+    input[type="text"]:focus, textarea:focus { border-color: #0284c7; }
+
+    /* VIEWFINDER KAMERA LIVE - JEPRET BERKALI-KALI TANPA POPUP */
+    .cam-box { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 14px; border: 2px solid #334155; }
+    .video-wrap { position: relative; width: 100%; height: 250px; background: #000; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    .cam-actions { padding: 10px; background: #1e293b; display: flex; flex-direction: column; gap: 8px; }
+    .btn-snap { width: 100%; background: #16a34a; color: #fff; font-weight: 800; font-size: 15px; padding: 14px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-snap:active { background: #15803d; transform: scale(0.99); }
+    .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
+
+    /* KANVAS TANDA TANGAN (POINTER EVENTS & ANTI-PUTUS) */
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      border: 2px dashed #94a3b8;
+      border-radius: 10px;
+      background: #ffffff;
+      margin-top: 4px;
+      touch-action: none; /* Mencegah layar ikut scroll saat dicorat-coret */
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .canvas-line { position: absolute; bottom: 30px; left: 16px; right: 16px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
+    .btn-reset { font-size: 11px; color: #ef4444; font-weight: 700; background: none; border: none; cursor: pointer; float: right; }
+
+    .item-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+    .item-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 6px; margin-top: 6px; }
+
+    .btn-submit { width: 100%; background: #0284c7; color: #fff; font-weight: 800; font-size: 15px; padding: 15px; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(2,132,199,0.25); }
+    
+    /* MODAL */
+    .overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 50; padding: 16px; }
+    .modal { background: #fff; border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; }
+    .btn-wa { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #25D366; color: #fff; font-weight: 800; font-size: 14px; padding: 13px; border-radius: 10px; text-decoration: none; margin-bottom: 8px; }
+    .btn-pdf { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #dc2626; color: #fff; font-weight: 800; font-size: 14px; padding: 13px; border-radius: 10px; text-decoration: none; margin-bottom: 8px; }
+    .btn-close { width: 100%; background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 12px; padding: 10px; border-radius: 10px; border: none; cursor: pointer; }
+    .spinner { width: 36px; height: 36px; border: 4px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Tanda Terima</h1>
+    <span class="badge" id="labelResi">MEMUAT...</span>
+  </header>
+
+  <div class="card">
+    <div class="form-group">
+      <label>Yang Menyerahkan (Pihak I) *</label>
+      <input type="text" id="penyerah" placeholder="Nama orang yang menyerahkan">
+    </div>
+    <div class="form-group" style="margin-top:8px;">
+      <label>Yang Menerima (Pihak II) *</label>
+      <input type="text" id="penerima" placeholder="Nama orang yang menerima">
+    </div>
+  </div>
+
+  <!-- VIEWFINDER KAMERA LIVE WEBRTC -->
+  <div class="cam-box">
+    <div id="camStartBox" style="padding:14px; text-align:center;">
+      <button type="button" class="btn-toggle-cam" onclick="startCamera()">📷 Buka Kamera Live (Jepret Cepat)</button>
+    </div>
+    <div id="camLiveArea" style="display:none;">
+      <div class="video-wrap">
+        <video id="liveVideo" autoplay playsinline muted></video>
+      </div>
+      <div class="cam-actions">
+        <button type="button" class="btn-snap" onclick="snapPhoto()">📸 JEPRET DOKUMEN (+ Tambah)</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#94a3b8; font-size:11px;">Kamera menyala terus, jepret berkali-kali</span>
+          <button type="button" onclick="stopCamera()" style="color:#ef4444; background:none; border:none; font-size:11px; font-weight:bold; cursor:pointer;">Tutup Kamera</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAFTAR DOKUMEN -->
+  <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px; display:flex; justify-content:space-between;">
+    <span>DAFTAR DOKUMEN / BARANG</span>
+    <span id="itemCount" style="color:#0284c7;">0 Dokumen</span>
+  </div>
+  <div id="daftarItems"></div>
+
+  <div class="card">
+    <label>Catatan Tambahan</label>
+    <textarea id="catatan" rows="2" placeholder="Kondisi dokumen/barang saat diterima..."></textarea>
+  </div>
+
+  <!-- TANDA TANGAN RETINA READY -->
+  <div class="card">
+    <div>
+      <button type="button" class="btn-reset" onclick="pad1.clear()">Reset</button>
+      <label>✍️ TTD Yang Menyerahkan *</label>
+      <div class="canvas-wrap">
+        <canvas id="ttd1"></canvas>
+        <div class="canvas-line"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <button type="button" class="btn-reset" onclick="pad2.clear()">Reset</button>
+      <label>✍️ TTD Yang Menerima *</label>
+      <div class="canvas-wrap">
+        <canvas id="ttd2"></canvas>
+        <div class="canvas-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn-submit" onclick="simpanTransaksi()">Simpan & Buat Tanda Terima</button>
+
+  <!-- MODAL PROGRESS -->
+  <div class="overlay" id="loadingModal">
+    <div style="text-align:center; color:#fff;">
+      <div class="spinner"></div>
+      <p style="font-weight:bold; font-size:14px;" id="loadingText">Menyimpan data & membuat PDF...</p>
+    </div>
+  </div>
+
+  <!-- MODAL SUKSES -->
+  <div class="overlay" id="successModal">
+    <div class="modal">
+      <div style="width:44px; height:44px; background:#dcfce7; color:#16a34a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 10px auto; font-weight:bold;">✓</div>
+      <h3 style="font-size:17px; font-weight:bold; margin-bottom:4px;">Tersimpan!</h3>
+      <p id="successInfo" style="font-size:11px; color:#64748b; font-family:monospace; margin-bottom:14px;"></p>
+
+      <a href="#" target="_blank" class="btn-wa" id="btnWA">💬 Kirim Bukti ke WhatsApp</a>
+      <a href="#" target="_blank" class="btn-pdf" id="btnPDF">📄 Buka & Unduh PDF Resmi</a>
+      <button type="button" class="btn-close" onclick="location.reload()">Tutup / Buat Baru</button>
+    </div>
+  </div>
+
+  <script>
+    // TEMPEL URL WEB APP DARI GOOGLE APPS SCRIPT DI SINI
+    const SCRIPT_URL = "TEMPEL_URL_WEB_APP_APPS_SCRIPT_DI_SINI";
+
+    let docId = "DOC 0001";
+
+    // 1. AMBIL NOMOR DOKUMEN OTOMATIS BERURUTAN
+    async function loadDocId() {
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "get_id" })
+        });
+        const json = await res.json();
+        if (json.status === "success" && json.docId) {
+          docId = json.docId;
+          document.getElementById("labelResi").innerText = docId;
+        }
+      } catch (e) {
+        document.getElementById("labelResi").innerText = docId;
+      }
+    }
+    loadDocId();
+
+    // 2. KAMERA LIVE DENGAN WEBRTC
+    let stream = null;
+    const video = document.getElementById("liveVideo");
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
+          audio: false
+        });
+        video.srcObject = stream;
+        await video.play();
+        document.getElementById("camStartBox").style.display = "none";
+        document.getElementById("camLiveArea").style.display = "block";
+      } catch (err) {
+        alert("Izin kamera gagal dibuka: " + err.message + "\nPastikan website dibuka lewat HTTPS (GitHub Pages/Netlify).");
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      document.getElementById("camLiveArea").style.display = "none";
+      document.getElementById("camStartBox").style.display = "block";
+    }
+
+    // 3. JEPRET DOKUMEN BERKALI-KALI
+    let items = [];
+
+    function snapPhoto() {
+      if (!video.videoWidth) return;
+      const c = document.createElement("canvas");
+      const maxDim = 850;
+      let w = video.videoWidth, h = video.videoHeight;
+      if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else if (h > maxDim) { h = Math.round(h * maxDim / h); h = maxDim; }
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(video, 0, 0, w, h);
+
+      const base64 = c.toDataURL("image/jpeg", 0.72);
+      const idx = items.length;
+      items.push({ deskripsi: "Membaca dengan Gemini 3.1...", foto: base64 });
+      renderItems();
+
+      // Scan via Gemini di backend (Kirim text/plain bebas preflight CORS)
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "scan", image: base64 })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === "success" && res.text) {
+          items[idx].deskripsi = res.text;
+          renderItems();
+        }
+      })
+      .catch(() => {
+        items[idx].deskripsi = "Dokumen #" + (idx + 1);
+        renderItems();
+      });
+    }
+
+    function renderItems() {
+      const container = document.getElementById("daftarItems");
+      container.innerHTML = "";
+      items.forEach((it, i) => {
+        container.innerHTML += `
+          <div class="item-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:bold; color:#0284c7;"># Dokumen ${i+1}</span>
+              <button type="button" onclick="removeItem(${i})" style="color:#ef4444; background:none; border:none; font-size:11px; font-weight:bold; cursor:pointer;">Hapus</button>
+            </div>
+            <input type="text" value="${it.deskripsi}" oninput="items[${i}].deskripsi = this.value" style="margin-top:4px;">
+            <img src="${it.foto}">
+          </div>`;
+      });
+      document.getElementById("itemCount").innerText = items.length + " Dokumen";
+    }
+
+    function removeItem(idx) {
+      items.splice(idx, 1);
+      renderItems();
+    }
+
+    // 4. KANVAS TANDA TANGAN POINTER EVENTS (PERSISI TINGGI & RETINA COMPATIBLE)
+    function setupSignature(canvasId) {
+      const cvs = document.getElementById(canvasId);
+      const ctx = cvs.getContext("2d");
+      let drawing = false;
+      let drawn = false;
+
+      function resize() {
+        const rect = cvs.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        cvs.width = rect.width * dpr;
+        cvs.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.strokeStyle = "#002b80"; // Royal Blue
+        ctx.lineWidth = 2.6;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+
+      setTimeout(resize, 100);
+      window.addEventListener("resize", resize);
+
+      cvs.addEventListener("pointerdown", (e) => {
+        cvs.setPointerCapture(e.pointerId);
+        drawing = true;
+        drawn = true;
+        const rect = cvs.getBoundingClientRect();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      });
+
+      cvs.addEventListener("pointermove", (e) => {
+        if (!drawing) return;
+        const rect = cvs.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+      });
+
+      const stop = () => { drawing = false; };
+      cvs.addEventListener("pointerup", stop);
+      cvs.addEventListener("pointercancel", stop);
+
+      return {
+        clear: () => {
+          const dpr = window.devicePixelRatio || 1;
+          ctx.clearRect(0, 0, cvs.width / dpr, cvs.height / dpr);
+          drawn = false;
+        },
+        isEmpty: () => !drawn,
+        toDataURL: () => drawn ? cvs.toDataURL("image/png") : ""
+      };
+    }
+
+    const pad1 = setupSignature("ttd1");
+    const pad2 = setupSignature("ttd2");
+
+    // 5. SIMPAN DATA TRANSAKSI
+    async function simpanTransaksi() {
+      const penyerah = document.getElementById("penyerah").value.trim();
+      const penerima = document.getElementById("penerima").value.trim();
+
+      if (!penyerah || !penerima) return alert("Nama penyerah dan penerima wajib diisi!");
+      if (items.length === 0) return alert("Jepret minimal 1 foto dokumen!");
+      if (pad1.isEmpty() || pad2.isEmpty()) return alert("Kedua tanda tangan wajib diisi!");
+
+      stopCamera();
+
+      document.getElementById("loadingModal").style.display = "flex";
+
+      const now = new Date();
+      const waktuLengkap = now.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) + " " + now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+      const payload = {
+        action: "save",
+        id: docId,
+        waktu: waktuLengkap,
+        penyerah: penyerah,
+        penerima: penerima,
+        catatan: document.getElementById("catatan").value.trim() || "-",
+        items: items,
+        ttdPenyerah: pad1.toDataURL(),
+        ttdPenerima: pad2.toDataURL()
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        document.getElementById("loadingModal").style.display = "none";
+
+        if (json.status === "success") {
+          let rincianWA = items.map((it, i) => `  ${i+1}. ${it.deskripsi}`).join("%0A");
+          let waText = 
+`*┏━━━━━━━━━━━━━━━━━━━━━┓*%0A` +
+`  📄 *TANDA TERIMA*%0A` +
+`*┗━━━━━━━━━━━━━━━━━━━━━┛*%0A` +
+`*No. Doc   :* \`${docId}\`%0A` +
+`*Waktu     :* ${payload.waktu}%0A%0A` +
+`*Penyerah  :* *${penyerah}*%0A` +
+`*Penerima  :* *${penerima}*%0A%0A` +
+`*Daftar Barang:*%0A${rincianWA}%0A%0A` +
+`*Catatan:*%0A"${payload.catatan}"%0A%0A` +
+`_Ditandatangani secara digital & arsip foto tersimpan._`;
+
+          document.getElementById("successInfo").innerText = `${docId} • ${payload.waktu}`;
+          document.getElementById("btnWA").href = `https://api.whatsapp.com/send?text=${waText}`;
+          document.getElementById("btnPDF").href = json.pdfUrl;
+          document.getElementById("successModal").style.display = "flex";
+        } else {
+          alert("Gagal simpan: " + json.message);
+        }
+      } catch (err) {
+        document.getElementById("loadingModal").style.display = "none";
+        alert("Gagal koneksi ke server: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
