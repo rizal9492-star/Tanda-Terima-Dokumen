@@ -28,13 +28,13 @@
     .btn-snap:active { background: #15803d; transform: scale(0.99); }
     .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
 
-    /* KANVAS TANDA TANGAN */
+    /* KANVAS TANDA TANGAN (LEGA & AMAN SCROLL) */
     .sig-box-wrapper { margin-bottom: 16px; }
     
     .canvas-wrap {
       position: relative;
       width: 100%;
-      height: 140px;
+      height: 175px; /* Ukuran diperbesar dan lebih lega */
       border: 2px dashed #94a3b8;
       border-radius: 10px;
       background: #ffffff;
@@ -47,9 +47,9 @@
       touch-action: none;
       cursor: crosshair;
     }
-    .canvas-line { position: absolute; bottom: 25px; left: 14px; right: 14px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
+    .canvas-line { position: absolute; bottom: 30px; left: 16px; right: 16px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
 
-    /* KONTROL BAWAH KANVAS (RESET DI KIRI, JALUR SCROLL DI KANAN) */
+    /* KONTROL BAWAH */
     .sig-footer {
       display: flex;
       justify-content: space-between;
@@ -63,7 +63,7 @@
       color: #dc2626;
       background: #fef2f2;
       border: 1px solid #fecaca;
-      padding: 5px 12px;
+      padding: 5px 14px;
       border-radius: 6px;
       cursor: pointer;
       touch-action: manipulation;
@@ -140,7 +140,7 @@
     <textarea id="catatan" rows="2" placeholder="Kondisi dokumen/barang saat diterima..."></textarea>
   </div>
 
-  <!-- TANDA TANGAN (BEBAS INTERUPSI SCROLL) -->
+  <!-- TANDA TANGAN -->
   <div class="card">
     <div class="sig-box-wrapper">
       <label>✍️ TTD Yang Menyerahkan *</label>
@@ -150,11 +150,11 @@
       </div>
       <div class="sig-footer">
         <button type="button" class="btn-reset-safe" onclick="konfirmasiReset(pad1)">🗑️ Reset TTD</button>
-        <span class="scroll-hint-right">Jalur Scroll ↕</span>
+        <span class="scroll-hint-right">Jalur Geser Layar ↕</span>
       </div>
     </div>
 
-    <div style="height: 10px;"></div>
+    <div style="height: 12px;"></div>
 
     <div class="sig-box-wrapper" style="margin-bottom:0;">
       <label>✍️ TTD Yang Menerima *</label>
@@ -164,7 +164,7 @@
       </div>
       <div class="sig-footer">
         <button type="button" class="btn-reset-safe" onclick="konfirmasiReset(pad2)">🗑️ Reset TTD</button>
-        <span class="scroll-hint-right">Jalur Scroll ↕</span>
+        <span class="scroll-hint-right">Jalur Geser Layar ↕</span>
       </div>
     </div>
   </div>
@@ -196,7 +196,6 @@
   </div>
 
   <script>
-    // URL Web App Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA8Cq9f9xweYr6zO_tcv2oMVBny5frgYSyUF35nDgZzGp4cS5bGEr1HbqPMlYW7FrS/exec";
 
     let docId = "DOC 0001";
@@ -310,27 +309,54 @@
       renderItems();
     }
 
-    // 4. KANVAS TANDA TANGAN (POINTER EVENTS & RETINA READY)
+    // 4. KANVAS TANDA TANGAN (KEBAL TERHADAP SCROLL ADDRESS BAR HP)
     function setupSignature(canvasId) {
       const cvs = document.getElementById(canvasId);
       const ctx = cvs.getContext("2d");
       let drawing = false;
       let drawn = false;
+      let lastWidth = 0;
 
-      function resize() {
-        const rect = cvs.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        cvs.width = rect.width * dpr;
-        cvs.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
+      function setGayaGaris() {
         ctx.strokeStyle = "#002b80";
-        ctx.lineWidth = 2.6;
+        ctx.lineWidth = 2.8;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
       }
 
-      setTimeout(resize, 100);
+      function resize() {
+        const rect = cvs.getBoundingClientRect();
+        const currentWidth = Math.round(rect.width);
+        
+        // JIKA LEBAR SAMA, JANGAN RESET KANVAS (Mencegah terhapus saat address bar HP muncul/hilang saat scroll)
+        if (currentWidth === lastWidth && lastWidth > 0) return;
+
+        // Ambil cadangan coretan lama sebelum kanvas di-scale ulang
+        let backupImage = null;
+        if (drawn) {
+          backupImage = cvs.toDataURL();
+        }
+
+        const dpr = window.devicePixelRatio || 1;
+        lastWidth = currentWidth;
+        cvs.width = rect.width * dpr;
+        cvs.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        setGayaGaris();
+
+        // Gambar ulang coretan yang sudah dibuat jika terjadi rotasi layar
+        if (backupImage) {
+          const img = new Image();
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, rect.width, rect.height);
+          };
+          img.src = backupImage;
+        }
+      }
+
+      setTimeout(resize, 150);
       window.addEventListener("resize", resize);
+      window.addEventListener("orientationchange", () => setTimeout(resize, 250));
 
       cvs.addEventListener("pointerdown", (e) => {
         cvs.setPointerCapture(e.pointerId);
@@ -366,7 +392,6 @@
     const pad1 = setupSignature("ttd1");
     const pad2 = setupSignature("ttd2");
 
-    // FUNGSI PENGAMAN TOMBOL RESET
     function konfirmasiReset(pad) {
       if (pad.isEmpty()) return;
       if (confirm("Hapus coretan tanda tangan ini?")) {
@@ -448,7 +473,7 @@
       }
     }
 
-    // 6. KIRIM FILE PDF KE WA DENGAN TEKS RINGKAS: "Tanda Terima"
+    // 6. KIRIM FILE PDF KE WA LANGSUNG DENGAN TEKS "Tanda Terima"
     async function kirimFilePdfKeWA() {
       if (!lastPdfBlob) {
         if (lastPdfUrl) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima: ' + lastPdfUrl)}`, '_blank');
