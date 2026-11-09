@@ -19,7 +19,7 @@
     input[type="text"], textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; }
     input[type="text"]:focus, textarea:focus { border-color: #0284c7; }
 
-    /* VIEWFINDER KAMERA LIVE - JEPRET BERKALI-KALI TANPA POPUP */
+    /* KAMERA LIVE VIEWFINDER */
     .cam-box { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 14px; border: 2px solid #334155; }
     .video-wrap { position: relative; width: 100%; height: 250px; background: #000; }
     video { width: 100%; height: 100%; object-fit: cover; }
@@ -28,7 +28,7 @@
     .btn-snap:active { background: #15803d; transform: scale(0.99); }
     .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
 
-    /* KANVAS TANDA TANGAN (POINTER EVENTS & ANTI-PUTUS) */
+    /* KANVAS TANDA TANGAN (POINTER EVENTS & RETINA SMOOTH) */
     .canvas-wrap {
       position: relative;
       width: 100%;
@@ -37,7 +37,7 @@
       border-radius: 10px;
       background: #ffffff;
       margin-top: 4px;
-      touch-action: none; /* Mencegah layar ikut scroll saat dicorat-coret */
+      touch-action: none;
     }
     canvas {
       width: 100%;
@@ -94,7 +94,7 @@
       <div class="cam-actions">
         <button type="button" class="btn-snap" onclick="snapPhoto()">📸 JEPRET DOKUMEN (+ Tambah)</button>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="color:#94a3b8; font-size:11px;">Kamera menyala terus, jepret berkali-kali</span>
+          <span style="color:#94a3b8; font-size:11px;">Kamera aktif terus, jepret berkali-kali</span>
           <button type="button" onclick="stopCamera()" style="color:#ef4444; background:none; border:none; font-size:11px; font-weight:bold; cursor:pointer;">Tutup Kamera</button>
         </div>
       </div>
@@ -113,7 +113,7 @@
     <textarea id="catatan" rows="2" placeholder="Kondisi dokumen/barang saat diterima..."></textarea>
   </div>
 
-  <!-- TANDA TANGAN RETINA READY -->
+  <!-- TANDA TANGAN -->
   <div class="card">
     <div>
       <button type="button" class="btn-reset" onclick="pad1.clear()">Reset</button>
@@ -157,20 +157,24 @@
   </div>
 
   <script>
-    // TEMPEL URL WEB APP DARI GOOGLE APPS SCRIPT DI SINI
-    const SCRIPT_URL = "TEMPEL_URL_WEB_APP_APPS_SCRIPT_DI_SINI";
+    // =========================================================================
+    // TEMPELKAN URL WEB APP ANDA YANG BERAKHIRAN /exec DI SINI:
+    // =========================================================================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA8Cq9f9xweYr6zO_tcv2oMVBny5frgYSyUF35nDgZzGp4cS5bGEr1HbqPMlYW7FrS/exec";
 
     let docId = "DOC 0001";
 
     // 1. AMBIL NOMOR DOKUMEN OTOMATIS BERURUTAN
     async function loadDocId() {
+      if (SCRIPT_URL.includes("PASTE_URL")) return;
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({ action: "get_id" })
         });
-        const json = await res.json();
+        const textResponse = await res.text();
+        const json = JSON.parse(textResponse);
         if (json.status === "success" && json.docId) {
           docId = json.docId;
           document.getElementById("labelResi").innerText = docId;
@@ -196,7 +200,7 @@
         document.getElementById("camStartBox").style.display = "none";
         document.getElementById("camLiveArea").style.display = "block";
       } catch (err) {
-        alert("Izin kamera gagal dibuka: " + err.message + "\nPastikan website dibuka lewat HTTPS (GitHub Pages/Netlify).");
+        alert("Izin kamera gagal dibuka: " + err.message + "\nPastikan website dibuka via HTTPS di browser HP.");
       }
     }
 
@@ -212,7 +216,7 @@
     // 3. JEPRET DOKUMEN BERKALI-KALI
     let items = [];
 
-    function snapPhoto() {
+    async function snapPhoto() {
       if (!video.videoWidth) return;
       const c = document.createElement("canvas");
       const maxDim = 850;
@@ -224,26 +228,26 @@
 
       const base64 = c.toDataURL("image/jpeg", 0.72);
       const idx = items.length;
-      items.push({ deskripsi: "Membaca dengan Gemini 3.1...", foto: base64 });
+      items.push({ deskripsi: "Membaca teks dokumen...", foto: base64 });
       renderItems();
 
-      // Scan via Gemini di backend (Kirim text/plain bebas preflight CORS)
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "scan", image: base64 })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if (res.status === "success" && res.text) {
-          items[idx].deskripsi = res.text;
+      // Scan via Gemini di backend
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "scan", image: base64 })
+        });
+        const textResponse = await res.text();
+        const resJson = JSON.parse(textResponse);
+        if (resJson.status === "success" && resJson.text) {
+          items[idx].deskripsi = resJson.text;
           renderItems();
         }
-      })
-      .catch(() => {
+      } catch (err) {
         items[idx].deskripsi = "Dokumen #" + (idx + 1);
         renderItems();
-      });
+      }
     }
 
     function renderItems() {
@@ -268,7 +272,7 @@
       renderItems();
     }
 
-    // 4. KANVAS TANDA TANGAN POINTER EVENTS (PERSISI TINGGI & RETINA COMPATIBLE)
+    // 4. KANVAS TANDA TANGAN (POINTER EVENTS & RETINA READY)
     function setupSignature(canvasId) {
       const cvs = document.getElementById(canvasId);
       const ctx = cvs.getContext("2d");
@@ -324,7 +328,7 @@
     const pad1 = setupSignature("ttd1");
     const pad2 = setupSignature("ttd2");
 
-    // 5. SIMPAN DATA TRANSAKSI
+    // 5. SIMPAN TRANSAKSI
     async function simpanTransaksi() {
       const penyerah = document.getElementById("penyerah").value.trim();
       const penerima = document.getElementById("penerima").value.trim();
@@ -359,7 +363,14 @@
           body: JSON.stringify(payload)
         });
 
-        const json = await res.json();
+        const textResponse = await res.text();
+        let json;
+        try {
+          json = JSON.parse(textResponse);
+        } catch (e) {
+          throw new Error("Respon server bukan JSON: " + textResponse.substring(0, 60));
+        }
+
         document.getElementById("loadingModal").style.display = "none";
 
         if (json.status === "success") {
