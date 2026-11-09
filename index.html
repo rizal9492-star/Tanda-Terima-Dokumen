@@ -19,6 +19,23 @@
     input[type="text"], textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; }
     input[type="text"]:focus, textarea:focus { border-color: #0284c7; }
 
+    /* TOMBOL TUKAR NAMA PENYERAH & PENERIMA */
+    .btn-swap {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #0284c7;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 6px 0 10px auto;
+    }
+    .btn-swap:active { background: #e2e8f0; }
+
     /* KAMERA LIVE VIEWFINDER */
     .cam-box { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 14px; border: 2px solid #334155; }
     .video-wrap { position: relative; width: 100%; height: 240px; background: #000; }
@@ -28,13 +45,13 @@
     .btn-snap:active { background: #15803d; transform: scale(0.99); }
     .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
 
-    /* KANVAS TANDA TANGAN (LEGA & AMAN SCROLL) */
+    /* KANVAS TANDA TANGAN (LEGA & KEBAL SCROLL) */
     .sig-box-wrapper { margin-bottom: 16px; }
     
     .canvas-wrap {
       position: relative;
       width: 100%;
-      height: 175px; /* Ukuran diperbesar dan lebih lega */
+      height: 175px;
       border: 2px dashed #94a3b8;
       border-radius: 10px;
       background: #ffffff;
@@ -49,7 +66,6 @@
     }
     .canvas-line { position: absolute; bottom: 30px; left: 16px; right: 16px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
 
-    /* KONTROL BAWAH */
     .sig-footer {
       display: flex;
       justify-content: space-between;
@@ -98,14 +114,23 @@
     <span class="badge" id="labelResi">DOC ....</span>
   </header>
 
+  <!-- AUTOCOMPLETE DATALIST BERSAMA -->
+  <datalist id="listNamaRekanan"></datalist>
+
   <div class="card">
     <div class="form-group">
       <label>Yang Menyerahkan (Pihak I) *</label>
-      <input type="text" id="penyerah" placeholder="Nama orang yang menyerahkan">
+      <input type="text" id="penyerah" list="listNamaRekanan" placeholder="Ketik atau pilih nama..." autocomplete="off">
     </div>
-    <div class="form-group" style="margin-top:8px;">
+
+    <!-- TOMBOL TUKAR NAMA INSTAN -->
+    <button type="button" class="btn-swap" onclick="tukarNama()">
+      ⇄ Tukar Penyerah & Penerima
+    </button>
+
+    <div class="form-group">
       <label>Yang Menerima (Pihak II) *</label>
-      <input type="text" id="penerima" placeholder="Nama orang yang menerima">
+      <input type="text" id="penerima" list="listNamaRekanan" placeholder="Ketik atau pilih nama..." autocomplete="off">
     </div>
   </div>
 
@@ -203,7 +228,42 @@
     let lastPdfBlob = null;
     let lastPdfFileName = "";
 
-    // 1. AMBIL NOMOR DOKUMEN OTOMATIS
+    // PENGELOLAAN DATABASE NAMA OTOMATIS (LOCALSTORAGE + SHEET)
+    let daftarNamaTersimpan = JSON.parse(localStorage.getItem("recorded_contact_names") || "[]");
+
+    function renderDatalistNames(newNames) {
+      if (Array.isArray(newNames)) {
+        newNames.forEach(n => {
+          n = String(n).trim();
+          if (n && !daftarNamaTersimpan.includes(n)) {
+            daftarNamaTersimpan.push(n);
+          }
+        });
+        localStorage.setItem("recorded_contact_names", JSON.stringify(daftarNamaTersimpan));
+      }
+
+      const dl = document.getElementById("listNamaRekanan");
+      dl.innerHTML = "";
+      daftarNamaTersimpan.sort().forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        dl.appendChild(opt);
+      });
+    }
+
+    // Tampilkan nama dari memori HP terlebih dahulu
+    renderDatalistNames([]);
+
+    // FUNGSI TUKAR POSISI NAMA PENYERAH & PENERIMA
+    function tukarNama() {
+      const p1 = document.getElementById("penyerah");
+      const p2 = document.getElementById("penerima");
+      const temp = p1.value;
+      p1.value = p2.value;
+      p2.value = temp;
+    }
+
+    // 1. AMBIL NOMOR DOKUMEN & SINKRONKAN NAMA DARI GOOGLE SHEET
     async function loadDocId() {
       try {
         const res = await fetch(SCRIPT_URL, {
@@ -213,9 +273,14 @@
         });
         const textResponse = await res.text();
         const json = JSON.parse(textResponse);
-        if (json.status === "success" && json.docId) {
-          docId = json.docId;
-          document.getElementById("labelResi").innerText = docId;
+        if (json.status === "success") {
+          if (json.docId) {
+            docId = json.docId;
+            document.getElementById("labelResi").innerText = docId;
+          }
+          if (json.names && Array.isArray(json.names)) {
+            renderDatalistNames(json.names);
+          }
         }
       } catch (e) {
         document.getElementById("labelResi").innerText = docId;
@@ -266,7 +331,7 @@
 
       const base64 = c.toDataURL("image/jpeg", 0.72);
       const idx = items.length;
-      items.push({ deskripsi: "Membaca teks dokumen...", foto: base64 });
+      items.push({ deskripsi: "Membaca teks dokumen secara menyeluruh...", foto: base64 });
       renderItems();
 
       try {
@@ -309,7 +374,7 @@
       renderItems();
     }
 
-    // 4. KANVAS TANDA TANGAN (KEBAL TERHADAP SCROLL ADDRESS BAR HP)
+    // 4. KANVAS TANDA TANGAN (KEBAL TERHADAP RESIZE SCROLL ADDRESS BAR HP)
     function setupSignature(canvasId) {
       const cvs = document.getElementById(canvasId);
       const ctx = cvs.getContext("2d");
@@ -328,10 +393,8 @@
         const rect = cvs.getBoundingClientRect();
         const currentWidth = Math.round(rect.width);
         
-        // JIKA LEBAR SAMA, JANGAN RESET KANVAS (Mencegah terhapus saat address bar HP muncul/hilang saat scroll)
         if (currentWidth === lastWidth && lastWidth > 0) return;
 
-        // Ambil cadangan coretan lama sebelum kanvas di-scale ulang
         let backupImage = null;
         if (drawn) {
           backupImage = cvs.toDataURL();
@@ -344,7 +407,6 @@
         ctx.scale(dpr, dpr);
         setGayaGaris();
 
-        // Gambar ulang coretan yang sudah dibuat jika terjadi rotasi layar
         if (backupImage) {
           const img = new Image();
           img.onload = () => {
@@ -454,6 +516,9 @@
         document.getElementById("loadingModal").style.display = "none";
 
         if (json.status === "success") {
+          // Rekam otomatis nama baru ke database saran input
+          renderDatalistNames([penyerah, penerima]);
+
           lastPdfUrl = json.pdfUrl;
           lastPdfFileName = `Tanda_Terima_${docId.replace(/\s+/g, '_')}.pdf`;
 
