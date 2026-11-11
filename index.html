@@ -19,7 +19,7 @@
     input[type="text"], textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; }
     input[type="text"]:focus, textarea:focus { border-color: #0284c7; }
 
-    /* TOMBOL TUKAR NAMA PENYERAH & PENERIMA */
+    /* TOMBOL TUKAR NAMA */
     .btn-swap {
       background: #f1f5f9;
       border: 1px solid #cbd5e1;
@@ -36,67 +36,268 @@
     }
     .btn-swap:active { background: #e2e8f0; }
 
-    /* KAMERA LIVE & DYNAMIC VIEWFINDER */
-    .cam-box { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 14px; border: 2px solid #334155; }
-    
-    /* Default Mode Tegak (Dokumen A4 3:4) */
-    .video-wrap {
-      position: relative;
+    /* TOMBOL BUKA KAMERA */
+    .btn-open-cam {
       width: 100%;
-      height: 360px;
-      background: #000;
-      overflow: hidden;
-      transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    video { width: 100%; height: 100%; object-fit: cover; display: block; }
-    
-    /* ANIMASI SHUTTER FLASH */
-    .shutter-flash {
-      position: absolute;
-      inset: 0;
-      background: #ffffff;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.15s ease-out;
-      z-index: 20;
-    }
-    .shutter-flash.active {
-      opacity: 0.9;
-      transition: none;
-    }
-
-    .cam-actions { padding: 10px; background: #1e293b; display: flex; flex-direction: column; gap: 8px; }
-    
-    /* TOMBOL TOGGLE MODE TEGAK / LEBAR */
-    .btn-cam-mode {
       background: #0284c7;
       color: #fff;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 12px;
       font-weight: 800;
+      font-size: 14px;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      touch-action: manipulation;
+      gap: 8px;
+      box-shadow: 0 2px 4px rgba(2,132,199,0.2);
     }
-    .btn-cam-mode:active { transform: scale(0.98); }
+    .btn-open-cam:active { background: #0369a1; }
 
-    .btn-snap { width: 100%; background: #16a34a; color: #fff; font-weight: 800; font-size: 15px; padding: 14px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-snap:active { background: #15803d; transform: scale(0.98); }
-    .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
+    /* ============================================================
+       LAYAR KAMERA ASLI PENUH (FULLSCREEN NATIVE CAMERA OVERLAY)
+       ============================================================ */
+    #camFullscreenOverlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
 
-    /* DAFTAR DOKUMEN: SISTEM SMART SPAN GRID */
+    /* Top Bar Kamera */
+    .cam-top-bar {
+      height: 60px;
+      padding: 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+      z-index: 10;
+    }
+
+    /* Tombol Kapsul Mode Melayang */
+    .btn-floating-mode {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .mode-indicator-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 6px #38bdf8;
+    }
+
+    .cam-btn-close {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Area Viewfinder Tengah */
+    .cam-view-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .cam-frame {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: aspect-ratio 0.2s ease;
+    }
+    .cam-frame.mode-portrait { aspect-ratio: 3/4; }
+    .cam-frame.mode-landscape { aspect-ratio: 4/3; }
+
+    #liveVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .shutter-flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease-out;
+      z-index: 20;
+    }
+    .shutter-flash.active { opacity: 0.9; transition: none; }
+
+    /* Bottom Bar Kamera */
+    .cam-bottom-bar {
+      height: 110px;
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.6));
+      z-index: 10;
+    }
+
+    /* Thumbnail Preview Kiri Bawah */
+    .cam-thumb-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: #1e293b;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cam-thumb-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .cam-thumb-placeholder { font-size: 20px; }
+    .cam-thumb-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #ef4444;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 5px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    /* Shutter Button Kamera Asli Tengah Bawah */
+    .cam-shutter-ring {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      padding: 3px;
+      cursor: pointer;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cam-shutter-core {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.1s ease, background 0.1s ease;
+    }
+    .cam-shutter-ring:active .cam-shutter-core {
+      transform: scale(0.86);
+      background: #cbd5e1;
+    }
+
+    /* Tombol Selesai Kanan Bawah */
+    .cam-btn-done {
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(22, 163, 74, 0.4);
+    }
+    .cam-btn-done:active { background: #15803d; }
+
+    /* POP-UP PREVIEW GALERI DI DALAM KAMERA */
+    #camGalleryModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      padding: 16px;
+    }
+    .gallery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .gallery-scroll {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding-bottom: 20px;
+    }
+    .gallery-item {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 6px;
+      position: relative;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+    }
+    .gallery-btn-del {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(239, 68, 68, 0.9);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* SMART SPAN GRID DI WEB APP */
     #daftarItems {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       margin-bottom: 14px;
     }
-
     .item-card {
       background: #f8fafc;
       border: 1px solid #cbd5e1;
@@ -105,20 +306,14 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: transform 0.2s ease;
     }
-    /* Smart Span: Foto horizontal otomatis membentang 2 kolom penuh */
-    .item-card.span-full {
-      grid-column: span 2;
-    }
-
+    .item-card.span-full { grid-column: span 2; }
     .item-card input[type="text"] {
       font-size: 12px;
       padding: 6px 8px;
       margin-top: 4px;
       border-radius: 6px;
     }
-
     .item-card img {
       width: 100%;
       border-radius: 6px;
@@ -127,16 +322,10 @@
       object-fit: cover;
       background: #000;
     }
-    /* Tinggi foto portrait vertikal */
-    .item-card:not(.span-full) img {
-      height: 190px;
-    }
-    /* Tinggi foto landscape melebar */
-    .item-card.span-full img {
-      height: 180px;
-    }
+    .item-card:not(.span-full) img { height: 190px; }
+    .item-card.span-full img { height: 180px; }
 
-    /* KANVAS TANDA TANGAN (LEGA 200PX & KEBAL SCROLL) */
+    /* KANVAS TANDA TANGAN VEKTOR (KEBAL SCROLL) */
     .sig-box-wrapper { margin-bottom: 16px; }
     .canvas-wrap {
       position: relative;
@@ -155,13 +344,7 @@
       cursor: crosshair;
     }
     .canvas-line { position: absolute; bottom: 30px; left: 16px; right: 16px; border-bottom: 1px dashed #cbd5e1; pointer-events: none; }
-
-    .sig-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 6px;
-    }
+    .sig-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
     .btn-reset-safe {
       font-size: 11px;
       font-weight: 700;
@@ -171,15 +354,13 @@
       padding: 6px 14px;
       border-radius: 6px;
       cursor: pointer;
-      touch-action: manipulation;
     }
-    .btn-reset-safe:active { background: #fee2e2; }
     .scroll-hint-right { font-size: 10px; color: #94a3b8; user-select: none; }
 
     .btn-submit { width: 100%; background: #0284c7; color: #fff; font-weight: 800; font-size: 15px; padding: 15px; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(2,132,199,0.25); }
-    
-    /* MODAL */
-    .overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 50; padding: 16px; }
+
+    /* MODAL PROGRESS & SELESAI */
+    .overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 50000; padding: 16px; }
     .modal { background: #fff; border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; }
     .btn-wa-pdf { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #25D366; color: #fff; font-weight: 800; font-size: 14px; padding: 13px; border-radius: 10px; border: none; cursor: pointer; margin-bottom: 8px; }
     .btn-pdf { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #0f172a; color: #fff; font-weight: 800; font-size: 14px; padding: 13px; border-radius: 10px; text-decoration: none; margin-bottom: 8px; }
@@ -213,32 +394,14 @@
     </div>
   </div>
 
-  <!-- VIEWFINDER KAMERA LIVE DENGAN TOGGLE MODE -->
-  <div class="cam-box">
-    <div id="camStartBox" style="padding:14px; text-align:center;">
-      <button type="button" class="btn-toggle-cam" onclick="startCamera()">📷 Buka Kamera</button>
-    </div>
-    <div id="camLiveArea" style="display:none;">
-      <div class="video-wrap" id="videoWrap">
-        <video id="liveVideo" autoplay playsinline muted></video>
-        <div id="shutterFlash" class="shutter-flash"></div>
-      </div>
-      <div class="cam-actions">
-        <!-- TOMBOL SWITCH MODE TEGAK / LEBAR -->
-        <button type="button" id="btnCamMode" class="btn-cam-mode" onclick="toggleCamMode()">
-          📐 Mode: ↕ Tegak (Dokumen / Kertas)
-        </button>
-
-        <button type="button" class="btn-snap" onclick="snapPhoto()">📸 JEPRET DOKUMEN (+ Tambah)</button>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="color:#94a3b8; font-size:11px;">Kamera aktif terus, jepret berkali-kali</span>
-          <button type="button" onclick="stopCamera()" style="color:#ef4444; background:none; border:none; font-size:11px; font-weight:bold; cursor:pointer;">Tutup Kamera</button>
-        </div>
-      </div>
-    </div>
+  <!-- AREA TOMBOL BUKA KAMERA -->
+  <div class="card" style="padding:10px;">
+    <button type="button" class="btn-open-cam" onclick="startCamera()">
+      📷 Buka Kamera
+    </button>
   </div>
 
-  <!-- DAFTAR DOKUMEN (SMART SPAN GRID) -->
+  <!-- DAFTAR DOKUMEN TERAMBIL (SMART SPAN) -->
   <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px; display:flex; justify-content:space-between;">
     <span>DAFTAR DOKUMEN / BARANG</span>
     <span id="itemCount" style="color:#0284c7;">0 Dokumen</span>
@@ -281,6 +444,58 @@
 
   <button type="button" class="btn-submit" onclick="simpanTransaksi()">Simpan Tanda Terima</button>
 
+  <!-- ============================================================
+       OVERLAY KAMERA ASLI LAYAR PENUH
+       ============================================================ -->
+  <div id="camFullscreenOverlay">
+    <!-- Top Bar -->
+    <div class="cam-top-bar">
+      <button type="button" class="btn-floating-mode" onclick="toggleCamMode()">
+        <span class="mode-indicator-dot" id="modeDot"></span>
+        <span id="modeText">3:4 Dokumen</span>
+      </button>
+
+      <button type="button" class="cam-btn-close" onclick="stopCamera()">✕</button>
+    </div>
+
+    <!-- Viewfinder -->
+    <div class="cam-view-container">
+      <div class="cam-frame mode-portrait" id="camFrame">
+        <video id="liveVideo" autoplay playsinline muted></video>
+        <div id="shutterFlash" class="shutter-flash"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar Kontrol Asli -->
+    <div class="cam-bottom-bar">
+      <!-- Thumbnail Galeri Kiri -->
+      <div class="cam-thumb-box" onclick="openGalleryModal()">
+        <img id="camLastThumb" src="" alt="Thumb">
+        <span id="camThumbPlaceholder" class="cam-thumb-placeholder">🖼️</span>
+        <span id="camThumbBadge" class="cam-thumb-badge">0</span>
+      </div>
+
+      <!-- Shutter Bulat Putih Tengah -->
+      <button type="button" class="cam-shutter-ring" onclick="snapPhoto()">
+        <div class="cam-shutter-core"></div>
+      </button>
+
+      <!-- Tombol Selesai Kanan -->
+      <button type="button" class="cam-btn-done" onclick="stopCamera()">
+        Selesai ✓
+      </button>
+    </div>
+  </div>
+
+  <!-- POP-UP INTIP GALERI DI DALAM KAMERA -->
+  <div id="camGalleryModal">
+    <div class="gallery-header">
+      <h3 style="font-size:16px;">Hasil Jepretan (<span id="galleryCount">0</span>)</h3>
+      <button type="button" class="cam-btn-close" onclick="closeGalleryModal()">✕</button>
+    </div>
+    <div class="gallery-scroll" id="galleryList"></div>
+  </div>
+
   <!-- MODAL PROGRESS -->
   <div class="overlay" id="loadingModal">
     <div style="text-align:center; color:#fff;">
@@ -312,41 +527,18 @@
     let lastPdfUrl = "";
     let lastPdfBlob = null;
     let lastPdfFileName = "";
+    let items = [];
 
-    // TOGGLE MODE BIDIKAN KAMERA (TEGAK VS LEBAR)
-    let camMode = "portrait"; // default tegak untuk dokumen kertas
-
-    function toggleCamMode() {
-      const wrap = document.getElementById("videoWrap");
-      const btn = document.getElementById("btnCamMode");
-      
-      if (camMode === "portrait") {
-        camMode = "landscape";
-        wrap.style.height = "220px";
-        btn.innerHTML = "📐 Mode: ↔ Lebar (Laptop / Barang Melebar)";
-        btn.style.background = "#d97706";
-      } else {
-        camMode = "portrait";
-        wrap.style.height = "360px";
-        btn.innerHTML = "📐 Mode: ↕ Tegak (Dokumen / Kertas)";
-        btn.style.background = "#0284c7";
-      }
-    }
-
-    // PENGELOLAAN DATABASE NAMA
+    // DATABASE NAMA
     let daftarNamaTersimpan = JSON.parse(localStorage.getItem("recorded_contact_names") || "[]");
-
     function renderDatalistNames(newNames) {
       if (Array.isArray(newNames)) {
         newNames.forEach(n => {
           n = String(n).trim();
-          if (n && !daftarNamaTersimpan.includes(n)) {
-            daftarNamaTersimpan.push(n);
-          }
+          if (n && !daftarNamaTersimpan.includes(n)) daftarNamaTersimpan.push(n);
         });
         localStorage.setItem("recorded_contact_names", JSON.stringify(daftarNamaTersimpan));
       }
-
       const dl = document.getElementById("listNamaRekanan");
       dl.innerHTML = "";
       daftarNamaTersimpan.sort().forEach(name => {
@@ -355,7 +547,6 @@
         dl.appendChild(opt);
       });
     }
-
     renderDatalistNames([]);
 
     function tukarNama() {
@@ -380,9 +571,7 @@
             docId = json.docId;
             document.getElementById("labelResi").innerText = docId;
           }
-          if (json.names && Array.isArray(json.names)) {
-            renderDatalistNames(json.names);
-          }
+          if (json.names && Array.isArray(json.names)) renderDatalistNames(json.names);
         }
       } catch (e) {
         document.getElementById("labelResi").innerText = docId;
@@ -390,9 +579,34 @@
     }
     loadDocId();
 
-    // KAMERA LIVE WEBRTC
+    // ============================================================
+    // MODE KAMERA ASLI LAYAR PENUH & WEBRTC
+    // ============================================================
     let stream = null;
     const video = document.getElementById("liveVideo");
+    let camMode = "portrait"; // default 3:4 tegak
+
+    function toggleCamMode() {
+      const frame = document.getElementById("camFrame");
+      const dot = document.getElementById("modeDot");
+      const text = document.getElementById("modeText");
+
+      if (camMode === "portrait") {
+        camMode = "landscape";
+        frame.classList.remove("mode-portrait");
+        frame.classList.add("mode-landscape");
+        dot.style.background = "#f59e0b";
+        dot.style.boxShadow = "0 0 6px #f59e0b";
+        text.innerText = "4:3 Barang Lebar";
+      } else {
+        camMode = "portrait";
+        frame.classList.remove("mode-landscape");
+        frame.classList.add("mode-portrait");
+        dot.style.background = "#38bdf8";
+        dot.style.boxShadow = "0 0 6px #38bdf8";
+        text.innerText = "3:4 Dokumen";
+      }
+    }
 
     async function startCamera() {
       try {
@@ -402,8 +616,8 @@
         });
         video.srcObject = stream;
         await video.play();
-        document.getElementById("camStartBox").style.display = "none";
-        document.getElementById("camLiveArea").style.display = "block";
+        document.getElementById("camFullscreenOverlay").style.display = "flex";
+        updateCameraThumb();
       } catch (err) {
         alert("Izin kamera gagal dibuka: " + err.message + "\nPastikan website dibuka via HTTPS di browser HP.");
       }
@@ -414,22 +628,20 @@
         stream.getTracks().forEach(t => t.stop());
         stream = null;
       }
-      document.getElementById("camLiveArea").style.display = "none";
-      document.getElementById("camStartBox").style.display = "block";
+      document.getElementById("camFullscreenOverlay").style.display = "none";
+      renderItems();
     }
 
-    // JEPRET DOKUMEN & CROPPING PRESI SESUAI MODE YANG DIPILIH
-    let items = [];
-
+    // JEPRET DOKUMEN WYSIWYG
     async function snapPhoto() {
       if (!video.videoWidth || !video.videoHeight) return;
 
-      // 1. Shutter Flash
+      // Animasi Shutter Flash
       const flash = document.getElementById("shutterFlash");
       flash.classList.add("active");
       setTimeout(() => flash.classList.remove("active"), 120);
 
-      // 2. Cropping Sesuai Dimensi Layar Viewfinder
+      // Cropping Presisi
       const vW = video.videoWidth;
       const vH = video.videoHeight;
       const viewW = video.clientWidth;
@@ -466,19 +678,16 @@
       const isLandscape = destW > destH;
       const base64 = c.toDataURL("image/jpeg", 0.75);
       const idx = items.length;
-      
+
       items.push({
         deskripsi: "Membaca dokumen / barang...",
         foto: base64,
         isLandscape: isLandscape
       });
-      renderItems();
 
-      setTimeout(() => {
-        const lastCard = document.getElementById(`card-item-${idx}`);
-        if (lastCard) lastCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 80);
+      updateCameraThumb();
 
+      // OCR Gemini di latar belakang
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
@@ -489,22 +698,76 @@
         const resJson = JSON.parse(textResponse);
         if (resJson.status === "success" && resJson.text) {
           items[idx].deskripsi = resJson.text;
-          renderItems();
         }
       } catch (err) {
         items[idx].deskripsi = "Dokumen / Barang #" + (idx + 1);
-        renderItems();
       }
     }
 
-    // RENDER ITEMS DENGAN SMART SPAN
+    // UPDATE BULATAN THUMBNAIL KIRI BAWAH
+    function updateCameraThumb() {
+      const thumb = document.getElementById("camLastThumb");
+      const icon = document.getElementById("camThumbPlaceholder");
+      const badge = document.getElementById("camThumbBadge");
+
+      if (items.length > 0) {
+        thumb.src = items[items.length - 1].foto;
+        thumb.style.display = "block";
+        icon.style.display = "none";
+        badge.innerText = items.length;
+        badge.style.display = "block";
+      } else {
+        thumb.style.display = "none";
+        icon.style.display = "block";
+        badge.style.display = "none";
+      }
+    }
+
+    // MODAL INTIP HASIL FOTO DI DALAM KAMERA
+    function openGalleryModal() {
+      if (items.length === 0) return alert("Belum ada foto yang dijepret!");
+      const modal = document.getElementById("camGalleryModal");
+      const list = document.getElementById("galleryList");
+      document.getElementById("galleryCount").innerText = items.length;
+      list.innerHTML = "";
+
+      items.forEach((it, i) => {
+        list.innerHTML += `
+          <div class="gallery-item">
+            <button type="button" class="gallery-btn-del" onclick="hapusDariGaleri(${i})">✕</button>
+            <img src="${it.foto}">
+            <div style="color:#94a3b8; font-size:10px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              #${i+1} ${it.deskripsi}
+            </div>
+          </div>`;
+      });
+      modal.style.display = "flex";
+    }
+
+    function closeGalleryModal() {
+      document.getElementById("camGalleryModal").style.display = "none";
+    }
+
+    function hapusDariGaleri(index) {
+      if (confirm(`Hapus foto #${index + 1}?`)) {
+        items.splice(index, 1);
+        updateCameraThumb();
+        if (items.length === 0) {
+          closeGalleryModal();
+        } else {
+          openGalleryModal();
+        }
+      }
+    }
+
+    // RENDER SMART SPAN DI FORM UTAMA
     function renderItems() {
       const container = document.getElementById("daftarItems");
       container.innerHTML = "";
       items.forEach((it, i) => {
         const spanClass = it.isLandscape ? "span-full" : "";
         container.innerHTML += `
-          <div class="item-card ${spanClass}" id="card-item-${i}">
+          <div class="item-card ${spanClass}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:11px; font-weight:bold; color:#0284c7;"># Dokumen ${i+1}</span>
               <button type="button" onclick="removeItem(${i})" style="color:#ef4444; background:none; border:none; font-size:11px; font-weight:bold; cursor:pointer;">Hapus</button>
@@ -519,9 +782,12 @@
     function removeItem(idx) {
       items.splice(idx, 1);
       renderItems();
+      updateCameraThumb();
     }
 
-    // KANVAS TANDA TANGAN VEKTOR (KEBAL RESIZE SCROLL)
+    // ============================================================
+    // KANVAS TANDA TANGAN SISTEM VEKTOR
+    // ============================================================
     function setupSignature(canvasId) {
       const cvs = document.getElementById(canvasId);
       const ctx = cvs.getContext("2d");
@@ -540,14 +806,11 @@
         const rect = cvs.getBoundingClientRect();
         ctx.clearRect(0, 0, rect.width, rect.height);
         setGayaGaris();
-
         for (let s of strokes) {
           if (!s || s.length === 0) continue;
           ctx.beginPath();
           ctx.moveTo(s[0].x, s[0].y);
-          for (let i = 1; i < s.length; i++) {
-            ctx.lineTo(s[i].x, s[i].y);
-          }
+          for (let i = 1; i < s.length; i++) ctx.lineTo(s[i].x, s[i].y);
           ctx.stroke();
         }
       }
@@ -555,11 +818,9 @@
       function initCanvasBuffer() {
         const rect = cvs.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return;
-
         const dpr = window.devicePixelRatio || 1;
         cvs.width = Math.round(rect.width * dpr);
         cvs.height = Math.round(rect.height * dpr);
-
         ctx.scale(dpr, dpr);
         setGayaGaris();
         redrawAllStrokes();
@@ -567,22 +828,16 @@
       }
 
       setTimeout(initCanvasBuffer, 200);
-
-      window.addEventListener("orientationchange", () => {
-        setTimeout(initCanvasBuffer, 300);
-      });
+      window.addEventListener("orientationchange", () => setTimeout(initCanvasBuffer, 300));
 
       cvs.addEventListener("pointerdown", (e) => {
         if (!initialized) initCanvasBuffer();
         cvs.setPointerCapture(e.pointerId);
-
         const rect = cvs.getBoundingClientRect();
-        const pt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        currentStroke = [pt];
+        currentStroke = [{ x: e.clientX - rect.left, y: e.clientY - rect.top }];
         strokes.push(currentStroke);
-
         ctx.beginPath();
-        ctx.moveTo(pt.x, pt.y);
+        ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
       });
 
       cvs.addEventListener("pointermove", (e) => {
@@ -590,7 +845,6 @@
         const rect = cvs.getBoundingClientRect();
         const pt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
         currentStroke.push(pt);
-
         ctx.lineTo(pt.x, pt.y);
         ctx.stroke();
       });
@@ -616,17 +870,13 @@
 
     function konfirmasiReset(pad) {
       if (pad.isEmpty()) return;
-      if (confirm("Hapus coretan tanda tangan ini?")) {
-        pad.clear();
-      }
+      if (confirm("Hapus coretan tanda tangan ini?")) pad.clear();
     }
 
     function base64ToBlob(base64, mimeType) {
       const byteChars = atob(base64);
       const byteNumbers = new Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) {
-        byteNumbers[i] = byteChars.charCodeAt(i);
-      }
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
       return new Blob([new Uint8Array(byteNumbers)], { type: mimeType });
     }
 
@@ -638,8 +888,6 @@
       if (!penyerah || !penerima) return alert("Nama penyerah dan penerima wajib diisi!");
       if (items.length === 0) return alert("Jepret minimal 1 foto dokumen!");
       if (pad1.isEmpty() || pad2.isEmpty()) return alert("Kedua tanda tangan wajib diisi!");
-
-      stopCamera();
 
       document.getElementById("loadingModal").style.display = "flex";
 
@@ -667,23 +915,16 @@
 
         const textResponse = await res.text();
         let json;
-        try {
-          json = JSON.parse(textResponse);
-        } catch (e) {
-          throw new Error("Respon server bukan JSON: " + textResponse.substring(0, 60));
-        }
+        try { json = JSON.parse(textResponse); }
+        catch (e) { throw new Error("Respon server bukan JSON: " + textResponse.substring(0, 60)); }
 
         document.getElementById("loadingModal").style.display = "none";
 
         if (json.status === "success") {
           renderDatalistNames([penyerah, penerima]);
-
           lastPdfUrl = json.pdfUrl;
           lastPdfFileName = `Tanda_Terima_${docId.replace(/\s+/g, '_')}.pdf`;
-
-          if (json.pdfBase64) {
-            lastPdfBlob = base64ToBlob(json.pdfBase64, "application/pdf");
-          }
+          if (json.pdfBase64) lastPdfBlob = base64ToBlob(json.pdfBase64, "application/pdf");
 
           document.getElementById("successInfo").innerText = `${docId} • ${payload.waktu}`;
           document.getElementById("btnPDF").href = json.pdfUrl;
@@ -697,13 +938,12 @@
       }
     }
 
-    // KIRIM FILE PDF KE WA LANGSUNG DENGAN TEKS "Tanda Terima"
+    // KIRIM FILE PDF KE WA
     async function kirimFilePdfKeWA() {
       if (!lastPdfBlob) {
         if (lastPdfUrl) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent('Tanda Terima: ' + lastPdfUrl)}`, '_blank');
         return;
       }
-
       const pdfFile = new File([lastPdfBlob], lastPdfFileName, { type: "application/pdf" });
 
       if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
