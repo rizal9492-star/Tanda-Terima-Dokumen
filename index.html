@@ -36,12 +36,21 @@
     }
     .btn-swap:active { background: #e2e8f0; }
 
-    /* KAMERA & SHUTTER ANIMATION */
+    /* KAMERA LIVE & DYNAMIC VIEWFINDER */
     .cam-box { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 14px; border: 2px solid #334155; }
-    .video-wrap { position: relative; width: 100%; height: 240px; background: #000; overflow: hidden; }
+    
+    /* Default Mode Tegak (Dokumen A4 3:4) */
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      background: #000;
+      overflow: hidden;
+      transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     video { width: 100%; height: 100%; object-fit: cover; display: block; }
     
-    /* ANIMASI KILATAN SHUTTER KAMERA */
+    /* ANIMASI SHUTTER FLASH */
     .shutter-flash {
       position: absolute;
       inset: 0;
@@ -57,13 +66,78 @@
     }
 
     .cam-actions { padding: 10px; background: #1e293b; display: flex; flex-direction: column; gap: 8px; }
+    
+    /* TOMBOL TOGGLE MODE TEGAK / LEBAR */
+    .btn-cam-mode {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      touch-action: manipulation;
+    }
+    .btn-cam-mode:active { transform: scale(0.98); }
+
     .btn-snap { width: 100%; background: #16a34a; color: #fff; font-weight: 800; font-size: 15px; padding: 14px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-snap:active { background: #15803d; transform: scale(0.98); }
     .btn-toggle-cam { width: 100%; background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
 
+    /* DAFTAR DOKUMEN: SISTEM SMART SPAN GRID */
+    #daftarItems {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .item-card {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease;
+    }
+    /* Smart Span: Foto horizontal otomatis membentang 2 kolom penuh */
+    .item-card.span-full {
+      grid-column: span 2;
+    }
+
+    .item-card input[type="text"] {
+      font-size: 12px;
+      padding: 6px 8px;
+      margin-top: 4px;
+      border-radius: 6px;
+    }
+
+    .item-card img {
+      width: 100%;
+      border-radius: 6px;
+      margin-top: 6px;
+      border: 1px solid #e2e8f0;
+      object-fit: cover;
+      background: #000;
+    }
+    /* Tinggi foto portrait vertikal */
+    .item-card:not(.span-full) img {
+      height: 190px;
+    }
+    /* Tinggi foto landscape melebar */
+    .item-card.span-full img {
+      height: 180px;
+    }
+
     /* KANVAS TANDA TANGAN (LEGA 200PX & KEBAL SCROLL) */
     .sig-box-wrapper { margin-bottom: 16px; }
-    
     .canvas-wrap {
       position: relative;
       width: 100%;
@@ -88,7 +162,6 @@
       align-items: center;
       margin-top: 6px;
     }
-
     .btn-reset-safe {
       font-size: 11px;
       font-weight: 700;
@@ -101,16 +174,7 @@
       touch-action: manipulation;
     }
     .btn-reset-safe:active { background: #fee2e2; }
-
-    .scroll-hint-right {
-      font-size: 10px;
-      color: #94a3b8;
-      user-select: none;
-    }
-
-    /* KARTU FOTO DOKUMEN */
-    .item-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 10px; transition: transform 0.2s ease; }
-    .item-card img { width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-top: 6px; border: 1px solid #e2e8f0; }
+    .scroll-hint-right { font-size: 10px; color: #94a3b8; user-select: none; }
 
     .btn-submit { width: 100%; background: #0284c7; color: #fff; font-weight: 800; font-size: 15px; padding: 15px; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(2,132,199,0.25); }
     
@@ -149,17 +213,22 @@
     </div>
   </div>
 
-  <!-- VIEWFINDER KAMERA LIVE -->
+  <!-- VIEWFINDER KAMERA LIVE DENGAN TOGGLE MODE -->
   <div class="cam-box">
     <div id="camStartBox" style="padding:14px; text-align:center;">
       <button type="button" class="btn-toggle-cam" onclick="startCamera()">📷 Buka Kamera</button>
     </div>
     <div id="camLiveArea" style="display:none;">
-      <div class="video-wrap">
+      <div class="video-wrap" id="videoWrap">
         <video id="liveVideo" autoplay playsinline muted></video>
         <div id="shutterFlash" class="shutter-flash"></div>
       </div>
       <div class="cam-actions">
+        <!-- TOMBOL SWITCH MODE TEGAK / LEBAR -->
+        <button type="button" id="btnCamMode" class="btn-cam-mode" onclick="toggleCamMode()">
+          📐 Mode: ↕ Tegak (Dokumen / Kertas)
+        </button>
+
         <button type="button" class="btn-snap" onclick="snapPhoto()">📸 JEPRET DOKUMEN (+ Tambah)</button>
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="color:#94a3b8; font-size:11px;">Kamera aktif terus, jepret berkali-kali</span>
@@ -169,7 +238,7 @@
     </div>
   </div>
 
-  <!-- DAFTAR DOKUMEN -->
+  <!-- DAFTAR DOKUMEN (SMART SPAN GRID) -->
   <div style="font-size:12px; font-weight:800; color:#334155; margin-bottom:8px; display:flex; justify-content:space-between;">
     <span>DAFTAR DOKUMEN / BARANG</span>
     <span id="itemCount" style="color:#0284c7;">0 Dokumen</span>
@@ -243,6 +312,26 @@
     let lastPdfUrl = "";
     let lastPdfBlob = null;
     let lastPdfFileName = "";
+
+    // TOGGLE MODE BIDIKAN KAMERA (TEGAK VS LEBAR)
+    let camMode = "portrait"; // default tegak untuk dokumen kertas
+
+    function toggleCamMode() {
+      const wrap = document.getElementById("videoWrap");
+      const btn = document.getElementById("btnCamMode");
+      
+      if (camMode === "portrait") {
+        camMode = "landscape";
+        wrap.style.height = "220px";
+        btn.innerHTML = "📐 Mode: ↔ Lebar (Laptop / Barang Melebar)";
+        btn.style.background = "#d97706";
+      } else {
+        camMode = "portrait";
+        wrap.style.height = "360px";
+        btn.innerHTML = "📐 Mode: ↕ Tegak (Dokumen / Kertas)";
+        btn.style.background = "#0284c7";
+      }
+    }
 
     // PENGELOLAAN DATABASE NAMA
     let daftarNamaTersimpan = JSON.parse(localStorage.getItem("recorded_contact_names") || "[]");
@@ -329,18 +418,18 @@
       document.getElementById("camStartBox").style.display = "block";
     }
 
-    // JEPRET DOKUMEN DENGAN CROPPING WYSIWYG & SHUTTER FLASH
+    // JEPRET DOKUMEN & CROPPING PRESI SESUAI MODE YANG DIPILIH
     let items = [];
 
     async function snapPhoto() {
       if (!video.videoWidth || !video.videoHeight) return;
 
-      // 1. Trigger Animasi Shutter Flash
+      // 1. Shutter Flash
       const flash = document.getElementById("shutterFlash");
       flash.classList.add("active");
       setTimeout(() => flash.classList.remove("active"), 120);
 
-      // 2. Hitung Cropping Presisi Sesuai Apa yang Terlihat di Layar
+      // 2. Cropping Sesuai Dimensi Layar Viewfinder
       const vW = video.videoWidth;
       const vH = video.videoHeight;
       const viewW = video.clientWidth;
@@ -374,18 +463,22 @@
       const ctx = c.getContext("2d");
       ctx.drawImage(video, sX, sY, sW, sH, 0, 0, destW, destH);
 
+      const isLandscape = destW > destH;
       const base64 = c.toDataURL("image/jpeg", 0.75);
       const idx = items.length;
-      items.push({ deskripsi: "Membaca dokumen / barang...", foto: base64 });
+      
+      items.push({
+        deskripsi: "Membaca dokumen / barang...",
+        foto: base64,
+        isLandscape: isLandscape
+      });
       renderItems();
 
-      // Auto-scroll ke foto terbaru agar langsung terlihat
       setTimeout(() => {
         const lastCard = document.getElementById(`card-item-${idx}`);
         if (lastCard) lastCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 80);
 
-      // Kirim ke Gemini AI di backend
       try {
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
@@ -404,17 +497,19 @@
       }
     }
 
+    // RENDER ITEMS DENGAN SMART SPAN
     function renderItems() {
       const container = document.getElementById("daftarItems");
       container.innerHTML = "";
       items.forEach((it, i) => {
+        const spanClass = it.isLandscape ? "span-full" : "";
         container.innerHTML += `
-          <div class="item-card" id="card-item-${i}">
+          <div class="item-card ${spanClass}" id="card-item-${i}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:11px; font-weight:bold; color:#0284c7;"># Dokumen ${i+1}</span>
               <button type="button" onclick="removeItem(${i})" style="color:#ef4444; background:none; border:none; font-size:11px; font-weight:bold; cursor:pointer;">Hapus</button>
             </div>
-            <input type="text" value="${it.deskripsi}" oninput="items[${i}].deskripsi = this.value" style="margin-top:4px;">
+            <input type="text" value="${it.deskripsi}" oninput="items[${i}].deskripsi = this.value">
             <img src="${it.foto}">
           </div>`;
       });
